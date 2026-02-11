@@ -1,0 +1,9 @@
+# Outils de transformation & Data Warehouse
+dbt-core
+dbt-snowflake
+
+# Outils pour le script Python d'ingestion
+pandas
+requests
+snowflake-connector-python
+pyarrow

@@ -1,0 +1,56 @@
+# 1. Identité du projet
+name: 'nyc_taxi_analysis'
+version: '1.0.0'
+config-version: 2
+
+# 2. Profil de connexion
+profile: 'nyc_taxi_analysis'
+dbt-cloud:
+    project-id: 70471823551899
+
+# 3. Structure des dossiers
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+# 4. Nettoyage
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# 5. CONFIGURATION DES MODÈLES (Le plus important !)
+models:
+  nyc_taxi_analysis: # Doit être identique au 'name' en haut
+    
+    # Couche STAGING (Silver)
+    # Ce sont des VUES car on veut que ce soit léger et rapide.
+    # Elles nettoient la donnée brute à la volée.
+    staging:
+      +materialized: view
+      +schema: staging      # Dans Snowflake, ça ira dans le schéma STAGING
+      +tags: ["staging"]
+
+    # Couche INTERMEDIATE (Optionnelle mais recommandée)
+    # Souvent 'ephemeral' (n'existe que pendant le calcul) ou 'view'.
+    # Sert à calculer des métriques complexes avant la table finale.
+    intermediate:
+      +materialized: ephemeral 
+      +tags: ["intermediate"]
+
+    # Couche MARTS / FINAL (Gold)
+    # Ce sont des TABLES physiques pour la performance des dashboards.
+    # On veut que PowerBI/Tableau tape dans du "dur".
+    marts:
+      +materialized: table
+      +schema: final        # Dans Snowflake, ça ira dans le schéma FINAL
+      +tags: ["production"]
+
+# 6. Configuration des Seeds (Petits fichiers statiques CSV)
+seeds:
+  nyc_taxi:
+    +enabled: true
+    +schema: raw            # On les met avec les données brutes
