@@ -1,10 +1,10 @@
 # 1. Identité du projet
-name: 'nyc_taxi-analysis'
+name: 'nyc_taxi_analysis'
 version: '1.0.0'
 config-version: 2
 
 # 2. Profil de connexion
-profile: 'nyc-taxi-analysis'
+profile: 'nyc_taxi_analysis'
 dbt-cloud:
     project-id: 70471823551899
 
@@ -24,7 +24,7 @@ clean-targets:
 
 # 5. CONFIGURATION DES MODÈLES (Le plus important !)
 models:
-  nyc_taxi: # Doit être identique au 'name' en haut
+  nyc_taxi_analysis: # Doit être identique au 'name' en haut
     
     # Couche STAGING (Silver)
     # Ce sont des VUES car on veut que ce soit léger et rapide.
