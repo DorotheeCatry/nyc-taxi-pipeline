@@ -7,3 +7,5 @@ pandas
 requests
 snowflake-connector-python
 pyarrow
+pyyaml
+python-dateutil

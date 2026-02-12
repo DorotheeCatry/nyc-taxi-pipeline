@@ -1,18 +1,29 @@
 name: Monthly dbt Pipeline
 
 on:
-  # 1. Déclenchement manuel (bouton "Run workflow")
+  # 1. Déclenchement manuel
   workflow_dispatch:
   
-  # 2. Déclenchement automatique (Cron)
+  # 2. Déclenchement automatique (Tous les 1er du mois à 06h00)
   schedule:
-    # "À 06h00 le 1er jour de chaque mois"
     - cron: '0 6 1 * *'
 
 jobs:
   dbt_run:
     name: Run dbt Pipeline
-    runs-on: ubuntu-latest # Environnement Ubuntu demandé
+    runs-on: ubuntu-latest
+
+    # 🚀 OPTIMISATION : On définit les variables ICI pour tous les steps
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+      SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+      # Cette variable aide dbt à ne pas spammer les logs
+      DBT_PROFILES_DIR: ./ 
 
     steps:
       # A. Récupérer le code
@@ -25,35 +36,24 @@ jobs:
         with:
           python-version: '3.10'
 
-      # C. Installer dbt
-      - name: Install dbt-snowflake
+      # C. Installer TOUTES les librairies (Python + dbt)
+      # Assure-toi que dbt-snowflake est bien dans requirements.txt
+      - name: Install dependencies
         run: |
-          pip install dbt-snowflake
+          pip install -r requirements.txt
 
-      # D. Installer les dépendances (dbt-utils, etc.)
+      # D. Lancer le script de chargement Python
+      - name: Run Load Data Script
+        run: python load_data.py
+
+      # E. Installer les dépendances dbt (packages.yml)
       - name: Install dbt packages
         run: dbt deps
 
-      # E. Lancer le pipeline (Tout construire)
+      # F. Lancer le pipeline dbt
       - name: Run dbt models
         run: dbt run
-        env:
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
-          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
-          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
-          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
 
-      # F. Tester la qualité des données
+      # G. Tester la qualité des données
       - name: Test dbt models
         run: dbt test
-        env:
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
-          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
-          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
-          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
