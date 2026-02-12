@@ -54,3 +54,4 @@ seeds:
   nyc_taxi:
     +enabled: true
     +schema: raw            # On les met avec les données brutes
+

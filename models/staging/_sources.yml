@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: nyc_taxi_source       # <--- C'est le nom que tu appelles dans le {{ source() }}
+    database: NYC_TAXI_DB       # Ton nom de base de données Snowflake
+    schema: RAW                 # Ton schéma où Python a mis les données
+    tables:
+      - name: yellow_taxi_trips # <--- Le nom exact de la table dans Snowflake
