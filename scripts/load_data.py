@@ -144,7 +144,7 @@ def load_data():
         ctx.close()
         if os.path.exists(DOWNLOAD_DIR):
             shutil.rmtree(DOWNLOAD_DIR)
-        print("\n👋 Pipeline terminé.")
+        print("\n Pipeline terminé.")
 
 if __name__ == "__main__":
     load_data()
