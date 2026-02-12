@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  # Table de faits principale
+  - name: dm_fact_trips
+    columns:
+      - name: trip_id
+        tests:
+          - unique
+          - not_null
+
+  # Résumé quotidien
+  - name: dm_daily_summary
+    columns:
+      - name: trip_date
+        tests:
+          - unique    # Une seule ligne par jour
+          - not_null
+
+  # Analyse par zone
+  - name: dm_zone_analysis
+    columns:
+      - name: pickup_location_id
+        tests:
+          - unique    # Une seule ligne par zone
+          - not_null
+
+  # Patterns horaires
+  - name: dm_hourly_patterns
+    columns:
+      - name: pickup_hour
+        tests:
+          - not_null
+          # L'heure doit être entre 0 et 23
+          - accepted_values:
+              values: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+              quote: false

@@ -23,7 +23,7 @@ jobs:
       SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
       SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
       # Cette variable aide dbt à ne pas spammer les logs
-      DBT_PROFILES_DIR: ./ 
+      DBT_PROFILES_DIR: ./ci_config
 
     steps:
       # A. Récupérer le code
@@ -34,7 +34,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       # C. Installer TOUTES les librairies (Python + dbt)
       # Assure-toi que dbt-snowflake est bien dans requirements.txt
