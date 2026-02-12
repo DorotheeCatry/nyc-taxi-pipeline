@@ -2,7 +2,7 @@ import os
 import yaml
 import requests
 import snowflake.connector
-import shutil  # <--- Nouveau : Pour supprimer le dossier même s'il n'est pas vide
+import shutil
 from datetime import datetime
 from pathlib import Path
 from dateutil.relativedelta import relativedelta
@@ -25,7 +25,7 @@ def get_dbt_credentials():
     
     try:
         if DBT_PROFILE_NAME not in profiles:
-             raise ValueError(f"Le profil '{DBT_PROFILE_NAME}' n'existe pas.")
+                raise ValueError(f"Le profil '{DBT_PROFILE_NAME}' n'existe pas.")
         return profiles[DBT_PROFILE_NAME]['outputs'][DBT_TARGET_NAME]
     except KeyError as e:
         raise ValueError(f"❌ Erreur de lecture du profil : {e}")
@@ -33,11 +33,11 @@ def get_dbt_credentials():
 def load_data():
     creds = get_dbt_credentials()
     
-    # Calcul des mois (Jan 2025 -> Aujourd'hui)
+    # Calcul des mois (Jan 2024 -> Aujourd'hui)
     today = datetime.today()
     months_to_load = []
-    # On commence en 2025 (Brief: 2025 + 2026)
-    current_date = datetime(2025, 1, 1) 
+    # On commence en 2024 (Brief: 2024 + 2025 - 2026)
+    current_date = datetime(2024, 1, 1) 
     
     while current_date <= today:
         months_to_load.append(current_date.strftime("%Y-%m"))
@@ -85,11 +85,9 @@ def load_data():
                 print(f"❌ Erreur réseau : {e}")
                 continue
 
-            # B. Upload vers Snowflake (Stage Nommé)
-            # On utilise @MY_INTERNAL_STAGE au lieu de @%table
+            # B. Upload vers Snowflake (Internal Stage)
             try:
                 print("⬆️ Upload...", end=" ")
-                # Windows path fix + PUT command
                 safe_path = local_path.replace('\\', '/')
                 put_query = f"PUT file://{os.path.abspath(safe_path)} @RAW.MY_INTERNAL_STAGE AUTO_COMPRESS=FALSE OVERWRITE=TRUE"
                 cs.execute(put_query)
@@ -115,7 +113,6 @@ def load_data():
     finally:
         cs.close()
         ctx.close()
-        # Nettoyage final du dossier (avec shutil pour éviter l'erreur Directory not empty)
         if os.path.exists(DOWNLOAD_DIR):
             shutil.rmtree(DOWNLOAD_DIR)
         print("\n👋 Pipeline terminé.")

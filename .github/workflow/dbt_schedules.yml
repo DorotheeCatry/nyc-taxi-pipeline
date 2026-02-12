@@ -1,0 +1,59 @@
+name: Monthly dbt Pipeline
+
+on:
+  # 1. Déclenchement manuel (bouton "Run workflow")
+  workflow_dispatch:
+  
+  # 2. Déclenchement automatique (Cron)
+  schedule:
+    # "À 06h00 le 1er jour de chaque mois"
+    - cron: '0 6 1 * *'
+
+jobs:
+  dbt_run:
+    name: Run dbt Pipeline
+    runs-on: ubuntu-latest # Environnement Ubuntu demandé
+
+    steps:
+      # A. Récupérer le code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # B. Installer Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # C. Installer dbt
+      - name: Install dbt-snowflake
+        run: |
+          pip install dbt-snowflake
+
+      # D. Installer les dépendances (dbt-utils, etc.)
+      - name: Install dbt packages
+        run: dbt deps
+
+      # E. Lancer le pipeline (Tout construire)
+      - name: Run dbt models
+        run: dbt run
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+
+      # F. Tester la qualité des données
+      - name: Test dbt models
+        run: dbt test
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}

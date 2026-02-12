@@ -2,18 +2,19 @@
 -- Nom : FINAL.hourly_patterns
 -- Métriques par heure : demande, revenus, vitesse moyenne
 
-with source as (
-    select * from {{ ref('stg_yellow_tripdata') }}),
+with trips as (
+    select * from {{ ref('int_trip_metrics') }}
+),
 
 hourly_agg as (
     select 
-        date_trunc('hour', pickup_datetime) as trip_hour, -- Métriques par heure
-        count(trip_id) as trips_volume,                   -- Demande
+        hour(pickup_datetime) as pickup_hour,
+        time_of_day,
+        count(trip_id) as hourly_demand,                  -- Demande par heure
         avg(average_speed_mph) as avg_speed,              -- Vitesse moyenne
         avg(total_amount) as hourly_revenu,               -- Revenus moyens from source      
         avg(fare_amount) as avg_fare_per_trip
-        from source
-    group by 1 ) 
+    from trips 
+    group by 1, 2) 
 
-select * from hourly_agg 
-order by trip_hour asc
+select * from hourly_agg order by pickup_hour, time_of_day
