@@ -34,7 +34,12 @@ with source as (
 cleaned as (
     select 
         -- Identifiant unique (Généré par dbt)
-        {{ dbt_utils.generate_surrogate_key(['vendorid', 'tpep_pickup_datetime']) }} as trip_id,
+        {{ dbt_utils.generate_surrogate_key([
+            'vendorid', 
+            'tpep_pickup_datetime', 
+            'pulocationid', 
+            'dolocationid'
+        ]) }} as trip_id,
         vendorid as vendor_id,
 
         -- Conversion des timestamps (Format Microsecondes -> Timestamp)
