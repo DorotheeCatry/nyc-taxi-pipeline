@@ -30,6 +30,14 @@ with source as (
     select * from {{ source('nyc_taxi_source', 'yellow_taxi_trips') }}
 ),
 
+deduplicated as (
+    select *,
+        row_number() over (
+            partition by vendorid, tpep_pickup_datetime, tpep_dropoff_datetime, passenger_count, trip_distance 
+            order by tpep_pickup_datetime
+        ) as rn
+    from source
+),
 
 cleaned as (
     select 
@@ -60,7 +68,8 @@ cleaned as (
         cast(total_amount as float) as total_amount,
         cast(payment_type as int) as payment_type
 
-    from source
+    from deduplicated
+    where rn = 1 -- Garder seulement la première occurrence pour chaque groupe de doublons
 ),
 
 enriched as (
