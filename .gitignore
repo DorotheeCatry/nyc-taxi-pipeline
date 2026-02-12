@@ -212,6 +212,5 @@ target/
 logs/
 
 # Snowflake / Sécurité
-profiles.yml
 config.json
 .DS_Store
