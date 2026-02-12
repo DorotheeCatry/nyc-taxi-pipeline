@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stg_yellow_taxi_trips
+    description: "Table de nettoyage des trajets de taxis jaunes."
+    columns:
+      # 1. Test fondamental : L'ID doit être unique et exister
+      - name: trip_id
+        tests:
+          - unique
+          - not_null
+
+      # 2. Test de validité : Le VendorID doit être connu (ex: 1 ou 2)
+      - name: vendor_id
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2]
+
+      # 3. Test de validité : Le type de paiement doit être standard
+      - name: payment_type
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6]
+              quote: false
+      
+      # 4. Test critique : Pas de trajets sans date
+      - name: pickup_datetime
+        tests:
+          - not_null
