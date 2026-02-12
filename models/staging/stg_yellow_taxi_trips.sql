@@ -30,102 +30,68 @@ with source as (
     select * from {{ source('nyc_taxi_source', 'yellow_taxi_trips') }}
 ),
 
-deduplicated as (
-    select *,
-        row_number() over (
-            partition by vendorid, tpep_pickup_datetime, tpep_dropoff_datetime, passenger_count, trip_distance 
-            order by tpep_pickup_datetime
-        ) as rn
-    from source
-),
-
-cleaned as (
+pre_computed as (
     select 
-        -- Identifiant unique (Généré par dbt)
+        -- Génération de la clé unique
         {{ dbt_utils.generate_surrogate_key([
             'vendorid', 
             'tpep_pickup_datetime', 
             'pulocationid', 
-            'dolocationid'
-        ]) }} as trip_id,
+            'dolocationid',
+            'trip_distance' 
+        ]) }} as trip_id, -- J'ai ajouté trip_distance pour rendre la clé encore plus unique
+        
         vendorid as vendor_id,
-
-        -- Conversion des timestamps (Format Microsecondes -> Timestamp)
         to_timestamp(tpep_pickup_datetime / 1000000) as pickup_datetime,
         to_timestamp(tpep_dropoff_datetime / 1000000) as dropoff_datetime,
-
-        -- Localisation
         cast(pulocationid as int) as pickup_location_id,
         cast(dolocationid as int) as dropoff_location_id,
-
-        -- Métriques brutes
         cast(passenger_count as int) as passenger_count,
         cast(trip_distance as float) as trip_distance,
-
-        -- Tarification
         cast(fare_amount as float) as fare_amount,
         cast(tip_amount as float) as tip_amount,
         cast(total_amount as float) as total_amount,
         cast(payment_type as int) as payment_type
-
-    from deduplicated
-    where rn = 1 -- Garder seulement la première occurrence pour chaque groupe de doublons
+    from source
 ),
 
-enriched as (
-    select
-    *,
-    -- Calcul de la durée du trajet en minutes
-    datediff('minute', pickup_datetime, dropoff_datetime) as trip_duration_minutes,
-
-    -- Extraction des dimensions temporelles
-    hour(pickup_datetime) as pickup_hour,
-    day(pickup_datetime) as pickup_day,
-    month(pickup_datetime) as pickup_month,
-    year(pickup_datetime) as pickup_year,
-
-    -- Calcul du pourcentage de pourboire par rapport au montant total
-    case 
-        when (total_amount - tip_amount) > 0 
-        then (tip_amount / (total_amount - tip_amount)) * 100 
-        else 0 
-    end as tip_percentage
-    from cleaned
-
+deduplicated as (
+    select *,
+        row_number() over (
+            partition by trip_id 
+            order by pickup_datetime
+        ) as rn
+    from pre_computed
 ),
-
 
 final as (
-    select *,
-
-        -- Calcul de la vitesse moyenne (miles par heure)
-        case 
-            when trip_duration_minutes > 0 
-            then (trip_distance / (trip_duration_minutes / 60)) 
-            else 0 
-        end as average_speed_mph,
-
-    from enriched 
-    where
-        -- Filtrer les montants négatifs
-        fare_amount >= 0
-        and tip_amount >= 0
-        and total_amount >= 0
-
-        -- Exclure les trajets avec dates incohérentes
-        and pickup_datetime < dropoff_datetime
-        and trip_duration_minutes < 600
-
-        -- Gérer les valeurs manquantes (Exclure les enregistrements avec des champs critiques manquants)
-        and vendor_id is not null
-        and pickup_datetime is not null and dropoff_datetime is not null
-        and pickup_location_id is not null and dropoff_location_id is not null
-        and passenger_count is not null
-        and trip_distance is not null
-
-        -- Supprimer les outliers extrêmes (< 0.1 miles ou > 100 miles)
-        and trip_distance between 0.1 and 100
+    select 
+        trip_id,
+        vendor_id,
+        pickup_datetime,
+        dropoff_datetime,
+        pickup_location_id,
+        dropoff_location_id,
+        passenger_count,
+        trip_distance,
+        fare_amount,
+        tip_amount,
+        total_amount,
+        payment_type,
+        datediff('minute', pickup_datetime, dropoff_datetime) as trip_duration_minutes
+    from deduplicated
+    where rn = 1 -- On ne garde que l'original, suppression stricte des doublons
+    
+    -- Filtres de qualité
+    and fare_amount >= 0
+    and tip_amount >= 0
+    and total_amount >= 0
+    and pickup_datetime < dropoff_datetime
+    and trip_duration_minutes < 600
+    and vendor_id is not null
+    and pickup_location_id is not null
+    and dropoff_location_id is not null
+    and trip_distance between 0.1 and 100
 )
-
 
 select * from final
