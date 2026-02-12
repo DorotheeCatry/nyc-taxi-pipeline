@@ -44,7 +44,7 @@ jobs:
 
       # D. Lancer le script de chargement Python
       - name: Run Load Data Script
-        run: python load_data.py
+        run: python scripts/load_data.py
 
       # E. Installer les dépendances dbt (packages.yml)
       - name: Install dbt packages
